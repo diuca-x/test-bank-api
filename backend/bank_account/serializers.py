@@ -5,6 +5,7 @@ from .models import Transactions,Account
 
 from schwifty import IBAN
 
+# basic serializer for the Transaction model, only used to fetch data
 class TransactionsSerializer(serializers.ModelSerializer):
     date = serializers.SerializerMethodField(read_only=True)
     class Meta:
@@ -17,6 +18,8 @@ class TransactionsSerializer(serializers.ModelSerializer):
     def get_date(self,obj):
         return obj.date.date()
 
+# serializer for the Transaction model in case of withdraw or deposit, it takes the amount to be taken or deposited and creates the rest
+# of the fields to save a Transactions instance
 class MoneyMovementSerializer(serializers.ModelSerializer):
     class Meta:
         model=Transactions
@@ -46,7 +49,8 @@ class MoneyMovementSerializer(serializers.ModelSerializer):
         else: 
             raise serializers.ValidationError("Error in operation")
         return super().create(validated_data)
-    
+
+# serializer for the transference of data, it validates the amount and the IBAN account number
 class TransferSerializer(serializers.Serializer):
     amount = serializers.FloatField()
     account = serializers.CharField(max_length=34)

@@ -8,7 +8,8 @@ from .models import Account,Transactions
 def validate_current_balance(sender, instance, **kwargs):
     if instance.current_balance < 0:
         raise ValidationError({"error":"Not enough funds."})
-    
+
+# this is to update the balance of the account on every transaction
 @receiver(pre_save, sender=Transactions)
 def validate_current_balance(sender, instance, **kwargs):
     bank_data = Account.objects.all().first()

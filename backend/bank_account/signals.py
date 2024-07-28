@@ -6,4 +6,4 @@ from .models import Account
 @receiver(pre_save, sender=Account)
 def validate_current_balance(sender, instance, **kwargs):
     if instance.current_balance < 0:
-        raise ValidationError("Current balance cannot be less than zero.")
+        raise ValidationError({"error":"Not enough funds."})

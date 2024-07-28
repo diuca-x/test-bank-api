@@ -1,7 +1,7 @@
 from rest_framework import generics,status
 from django.db import transaction
 from rest_framework.response import Response
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import ValidationError
 
 from .models import Transactions,Account
 from .serializers import TransactionsSerializer,MoneyMovementSerializer,TransferSerializer
@@ -35,7 +35,7 @@ class MoveMoneyAPIView(generics.CreateAPIView):
         elif(operation == "withdraw"):
             context["operation"] = "withdraw"
         else:
-            raise APIException(code=404,detail="An unexpected error has occured")
+            raise ValidationError(code=404,detail="An unexpected error has occured")
         return context
 
     @transaction.atomic
@@ -55,8 +55,15 @@ class TransferMoneyAPIView(generics.CreateAPIView):
     @transaction.atomic
     def perform_create(self, serializer):
         
-        print(serializer.validated_data)
-
+        transaction = {
+            "amount" : serializer.validated_data.get("amount")
+        }
+        to_add = MoneyMovementSerializer(data=transaction, context={"operation":"transfer"})
+        if(to_add.is_valid()):
+            to_add.save()
+        else:
+            raise ValidationError(code=400, detail="An error has occured")
+        
         bank_data = Account.objects.all().first()
         bank_data.current_balance -= serializer.validated_data.get("amount")
-        #bank_data.save()
+        bank_data.save()

@@ -8,11 +8,10 @@ from .serializers import TransactionsSerializer,MoneyMovementSerializer,Transfer
 
 import datetime
 
-# stays
+# route to retrieve the bank statement, ordered by most recent by default
 class StatementListAPIView(generics.ListAPIView):
     queryset = Transactions.objects.all().order_by('-date')
     serializer_class = TransactionsSerializer
-    # lookup_field = "pk"
 
     def list(self, request, *args, **kwargs):
             queryset = self.get_queryset()
@@ -22,9 +21,9 @@ class StatementListAPIView(generics.ListAPIView):
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
 
-# stays
+# route to deposit or withdraw money
 class MoveMoneyAPIView(generics.CreateAPIView):
-    queryset = Transactions.objects.all().order_by('-date')
+    queryset = Transactions.objects.all()
     serializer_class = MoneyMovementSerializer
 
     def get_serializer_context(self):
@@ -43,13 +42,11 @@ class MoveMoneyAPIView(generics.CreateAPIView):
         operation = self.get_serializer_context().get("operation")
         serializer.save()
         
-        bank_data = Account.objects.all().first()
-        bank_data.current_balance = bank_data.current_balance + serializer.validated_data.get("amount") if operation == "deposit" else bank_data.current_balance - serializer.validated_data.get("amount")
-        bank_data.save()
+        
 
-# stays
+# route to transfer money to another account using the IBAN number
 class TransferMoneyAPIView(generics.CreateAPIView):
-    queryset = Transactions.objects.all().order_by('-date')
+    queryset = Transactions.objects.all()
     serializer_class = TransferSerializer
     
     @transaction.atomic
@@ -64,6 +61,4 @@ class TransferMoneyAPIView(generics.CreateAPIView):
         else:
             raise ValidationError(code=400, detail="An error has occured")
         
-        bank_data = Account.objects.all().first()
-        bank_data.current_balance -= serializer.validated_data.get("amount")
-        bank_data.save()
+        

@@ -1,9 +1,10 @@
-from rest_framework import generics
+from rest_framework import generics,status
 from django.db import transaction
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.exceptions import APIException
+
 from .models import Transactions,Account
-from .serializers import TransactionsSerializer,DepositSerializer
+from .serializers import TransactionsSerializer,MoneyMovementSerializer,TransferSerializer
 
 import datetime
 
@@ -22,37 +23,40 @@ class StatementListAPIView(generics.ListAPIView):
             return Response(serializer.data)
 
 # stays
-class DepositMoneyAPIView(generics.CreateAPIView):
+class MoveMoneyAPIView(generics.CreateAPIView):
     queryset = Transactions.objects.all().order_by('-date')
-    serializer_class = DepositSerializer
+    serializer_class = MoneyMovementSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["operation"] = "deposit"
+        operation = self.request.path.strip('/').split('/')[-1]
+        if(operation == "deposit"):
+            context["operation"] = "deposit"
+        elif(operation == "withdraw"):
+            context["operation"] = "withdraw"
+        else:
+            raise APIException(code=404,detail="An unexpected error has occured")
         return context
 
     @transaction.atomic
     def perform_create(self, serializer):
+        operation = self.get_serializer_context().get("operation")
         serializer.save()
         
         bank_data = Account.objects.all().first()
-        bank_data.current_balance += serializer.validated_data.get("amount")
+        bank_data.current_balance = bank_data.current_balance + serializer.validated_data.get("amount") if operation == "deposit" else bank_data.current_balance - serializer.validated_data.get("amount")
         bank_data.save()
 
 # stays
-class WithdrawMoneyAPIView(generics.CreateAPIView):
+class TransferMoneyAPIView(generics.CreateAPIView):
     queryset = Transactions.objects.all().order_by('-date')
-    serializer_class = DepositSerializer
-
-    def get_serializer_context(self):
-        context = super().get_serializer_context()
-        context["operation"] = "withdraw"
-        return context
+    serializer_class = TransferSerializer
     
     @transaction.atomic
     def perform_create(self, serializer):
-        serializer.save()
         
+        print(serializer.validated_data)
+
         bank_data = Account.objects.all().first()
         bank_data.current_balance -= serializer.validated_data.get("amount")
-        bank_data.save()
+        #bank_data.save()

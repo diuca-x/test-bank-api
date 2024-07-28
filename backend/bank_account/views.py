@@ -1,23 +1,32 @@
 from rest_framework import generics,status
 from django.db import transaction
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError,NotFound
 
 from .models import Transactions,Account
 from .serializers import TransactionsSerializer,MoneyMovementSerializer,TransferSerializer
 
 import datetime
 
-# route to retrieve the bank statement, ordered by most recent by default
+# route to retrieve the bank statement, by asc or desc order
 class StatementListAPIView(generics.ListAPIView):
-    queryset = Transactions.objects.all().order_by('-date')
     serializer_class = TransactionsSerializer
+
+    def get_queryset(self):
+        query = Transactions.objects.all()
+        order = self.kwargs.get("order")
+        if(order == "asc"):
+            query = query.order_by("date")
+        elif(order == "desc"):
+            query = query.order_by("-date")
+        else:
+            raise NotFound(detail={"message":"invalid url"})
+        return query
 
     def list(self, request, *args, **kwargs):
             queryset = self.get_queryset()
             if not queryset.exists():
                 return Response({'message': 'No transactions found.'}, status=status.HTTP_204_NO_CONTENT)
-            
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
 
@@ -39,7 +48,7 @@ class MoveMoneyAPIView(generics.CreateAPIView):
 
     @transaction.atomic
     def perform_create(self, serializer):
-        operation = self.get_serializer_context().get("operation")
+        # on saves it calls the create method from the serializer
         serializer.save()
         
         

@@ -14,6 +14,7 @@ class TransactionsSerializer(serializers.ModelSerializer):
             "date",
             "amount",
             "balance_at_time",
+            "operation"
         ]
     def get_date(self,obj):
         return obj.date.date()
@@ -41,6 +42,8 @@ class MoneyMovementSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         validated_data['date'] = timezone.now()
+        validated_data["operation"] = self.context.get("operation")
+
         if (self.context.get("operation") == "deposit"):
             validated_data['balance_at_time'] = Account.objects.all().first().current_balance + validated_data.get("amount")
         elif (self.context.get("operation") == "withdraw" or self.context.get("operation") == "transfer"):

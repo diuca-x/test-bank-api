@@ -10,3 +10,4 @@ class Transactions(models.Model):
     date = models.DateTimeField(null=False)
     amount = models.FloatField(null=False)
     balance_at_time = models.FloatField(null=False)
+    operation = models.CharField(max_length=10)

@@ -1,4 +1,4 @@
-from rest_framework import generics,status
+from rest_framework import generics,status,mixins
 from django.db import transaction
 from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError,NotFound
@@ -9,7 +9,7 @@ from .serializers import TransactionsSerializer,MoneyMovementSerializer,Transfer
 import datetime
 
 # route to retrieve the bank statement, by asc or desc order
-class StatementListAPIView(generics.ListAPIView):
+class StatementListAPIView(mixins.ListModelMixin,generics.GenericAPIView):
     serializer_class = TransactionsSerializer
 
     def get_queryset(self):
@@ -23,12 +23,14 @@ class StatementListAPIView(generics.ListAPIView):
             raise NotFound(detail={"message":"invalid url"})
         return query
 
-    def list(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
             queryset = self.get_queryset()
             if not queryset.exists():
                 return Response({'message': 'No transactions found.'}, status=status.HTTP_204_NO_CONTENT)
             serializer = self.get_serializer(queryset, many=True)
             return Response(serializer.data)
+    
+    
 
 # route to deposit or withdraw money
 class MoveMoneyAPIView(generics.CreateAPIView):
@@ -62,7 +64,8 @@ class TransferMoneyAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         
         transaction = {
-            "amount" : serializer.validated_data.get("amount")
+            "amount" : serializer.validated_data.get("amount"),
+            "operation": "transfer"
         }
         to_add = MoneyMovementSerializer(data=transaction, context={"operation":"transfer"})
         if(to_add.is_valid()):

@@ -14,8 +14,7 @@ class TransactionsSerializer(serializers.ModelSerializer):
             "balance_at_time",
         ]
 
-
-class DepositSerializer(serializers.ModelSerializer):
+class MoneyMovementSerializer(serializers.ModelSerializer):
     class Meta:
         model=Transactions
         fields = [
@@ -44,3 +43,12 @@ class DepositSerializer(serializers.ModelSerializer):
         else: 
             raise serializers.ValidationError("Error in operation")
         return super().create(validated_data)
+    
+class TransferSerializer(serializers.Serializer):
+    amount = serializers.FloatField()
+    account = serializers.CharField(max_length=34)
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Amount must be greater than zero.")
+        return value

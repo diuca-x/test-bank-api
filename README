@@ -1,1 +1,33 @@
-test bank api
+# Bank api 
+
+## To run the app
+
+### 1. Create a virtual enviroment (optional)
+
+go to the root and execute 
+
+`python -m venv project`
+
+then 
+
+`cd project`
+
+`cd Scripts`
+
+`activate`
+
+### 2. install requirements 
+
+*this app was made using python 3.11.9
+
+go to backend and execute 
+
+`pip install -r requirements.txt`
+
+### 3. run the app 
+
+execute 
+
+`python manage.py runserver`
+
+and you can start calling the api

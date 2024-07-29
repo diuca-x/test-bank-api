@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from django.utils import timezone
-from .models import Transactions,Account
+from .models import Transactions,Account,operation_type
 
 from schwifty import IBAN
 
@@ -19,6 +19,13 @@ class TransactionsSerializer(serializers.ModelSerializer):
     def get_date(self,obj):
         return obj.date.date()
 
+# serialzier for the statement list validation of the incoming data
+class StatementRequestSerializer(serializers.Serializer):
+    operation_type = serializers.ChoiceField(choices=[(tag.value,tag.name) for tag in operation_type],required=False,allow_null=True)
+    dates = serializers.ListField(child=serializers.DateField(input_formats=['%d-%m-%Y'],format='%d-%m-%Y'),min_length=2,max_length=2,required=False,allow_null=True)
+    order = serializers.ChoiceField(choices=["asc","desc"],required=False,allow_null=True)
+
+    
 # serializer for the Transaction model in case of withdraw or deposit, it takes the amount to be taken or deposited and creates the rest
 # of the fields to save a Transactions instance
 class MoneyMovementSerializer(serializers.ModelSerializer):

@@ -1,5 +1,14 @@
 from django.db import models
 
+from enum import Enum
+
+
+class operation_type(Enum):
+    TRANSFER = "transference"
+    DEPOSIT = "deposit"
+    WITHDRAW = "withdraw"
+
+
 # account model to register the current balance
 class Account(models.Model):
     current_balance = models.FloatField(null=False)
@@ -11,3 +20,4 @@ class Transactions(models.Model):
     amount = models.FloatField(null=False)
     balance_at_time = models.FloatField(null=False)
     operation = models.CharField(max_length=10)
+

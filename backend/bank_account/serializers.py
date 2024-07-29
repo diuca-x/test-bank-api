@@ -27,7 +27,13 @@ class StatementRequestSerializer(serializers.Serializer):
     dates = serializers.ListField(child=serializers.DateField(input_formats=['%d-%m-%Y'],format='%d-%m-%Y'),min_length=2,max_length=2,required=False,allow_null=True)
     order = serializers.ChoiceField(choices=["asc","desc"],required=False,allow_null=True)
 
-# to make the pagination
+    def validate(self, data):
+        if hasattr(self, 'initial_data'):
+            unknown_keys = set(self.initial_data.keys()) - set(self.fields.keys())
+            if unknown_keys:
+                raise serializers.ValidationError({"Got unexpected fields: ": list(unknown_keys)})
+        return data
+# to make the pagination, it can search by specific number of pages or by first/last
 class CustomPagination(PageNumberPagination):
     page_size = 10  
 
@@ -38,7 +44,7 @@ class CustomPagination(PageNumberPagination):
             request.query_params['page'] = 1
             request.query_params._mutable = True
         elif page == "last":
-            paginator = self.django_paginator_class(queryset, self.page_size)
+            paginator = self.django_paginator_class(queryset, self.page_size) # this is because the number of pages is not available at this point
             request.query_params._mutable = True
             request.query_params['page'] = paginator.num_pages
             request.query_params._mutable = True

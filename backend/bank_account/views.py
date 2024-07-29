@@ -21,16 +21,15 @@ class StatementListAPIView(mixins.ListModelMixin,generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         request_serializer = self.request_serializer_class(data=request.data)    
-
-        if(request_serializer.is_valid()):
+        if(request_serializer.is_valid()): # validate incoming data
             filters = request_serializer.validated_data
             queryset = self.get_queryset()   
 
-            filtered_query = filter_query(queryset,filters)
+            filtered_query = filter_query(queryset,filters) # aply the filters
             if not filtered_query.exists():
                 return Response({'message': 'No transactions found.'}, status=status.HTTP_204_NO_CONTENT)
 
-            page = self.paginate_queryset(filtered_query)
+            page = self.paginate_queryset(filtered_query) # paginate the query
             if page is not None:
                 response_serializer = self.response_serializer_class(page, many=True)
                 return self.get_paginated_response(response_serializer.data)

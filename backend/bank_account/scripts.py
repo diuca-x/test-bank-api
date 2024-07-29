@@ -9,7 +9,6 @@ def filter_query(query_set,filters):
     new_query = query_set
     if operation_type:
         new_query = query_set.filter(operation=operation_type)
-
     if dates:
         max_date = make_aware(datetime.combine(dates[1],time.max))
         min_date = make_aware(datetime.combine(dates[0],time.min))

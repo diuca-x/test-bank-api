@@ -31,3 +31,13 @@ execute
 `python manage.py runserver`
 
 and you can start calling the api
+
+### 4. considerations
+
+- For simplicity the verification of the ibans is made with the schwifty library, I would rather do it calling the IBAN official api 
+for the verification
+
+- To paginate you have to add at the last part of the url a ?page={number of page/last/first}
+
+- There is a JSON file called bank.postman_collection with a collection to test the api in local with postman
+

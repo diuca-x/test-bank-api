@@ -4,7 +4,7 @@ from enum import Enum
 
 
 class operation_type(Enum):
-    TRANSFER = "transference"
+    TRANSFER = "transfer"
     DEPOSIT = "deposit"
     WITHDRAW = "withdraw"
 

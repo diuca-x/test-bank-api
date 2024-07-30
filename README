@@ -41,3 +41,4 @@ for the verification
 
 - There is a JSON file called bank.postman_collection with a collection to test the api in local with postman
 
+- The API is connected to a PSQL database hosted on Aiven, the conection was made without env variables for simplicity

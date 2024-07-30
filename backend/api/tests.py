@@ -242,19 +242,24 @@ class TestTransfer(TestCase):
 
         assert len(Transactions.objects.all()) == transaction_number
         assert Account.objects.first().current_balance == previous_amount
-
+from datetime import datetime,timedelta,timezone,date
 
 class TestGetStatement(TestCase):
     url = url + "get-statement"
 
     def setUp(self):
         Account.objects.create(current_balance=99999999999)   
+
+        Transactions.objects.create(date = datetime.today() - timedelta(days=1),amount = 100, balance_at_time = 99999999999 + 100,operation="deposit")
+        Transactions.objects.create(date = datetime.today() + timedelta(days=1),amount = 100, balance_at_time = 99999999999 + 200,operation="deposit")
+
         for i in range (0,5):
             self.client.post(url+"transfer",data={"amount":random.uniform(1,150),"account":"GB24BARC20201630093459"})
             self.client.post(url+"deposit",data={"amount":random.uniform(1,150)})
             self.client.post(url+"withdraw",data={"amount":random.uniform(1,150)})
 
-        assert len(Transactions.objects.all()) == 15
+
+        assert len(Transactions.objects.all()) == 17
 
     def test_can_get_statement(self):
         response = self.client.post(self.url)
@@ -281,26 +286,77 @@ class TestGetStatement(TestCase):
             assert i.get("operation") == "transfer"
     
     def test_can_order(self):
-        first_transaction = Transactions.objects.first()
-        last_transaction = Transactions.objects.order_by("date").first()
 
         response = self.client.post(self.url,data={"order": "asc"})
 
         results = response.json().get("data")
         
-        first = results[0]
-        last = results[-1]
+        for index,value in enumerate(results):
+            if index+1 < len(results):
+                assert results[index].get("date") <= results[index+1].get("date")
 
-        assert first_transaction.amount == first.get("amount") 
-        assert first_transaction.balance_at_time == first.get("balance_at_time") 
-        assert str(first_transaction.date.date()) == first.get("date") 
-        assert first_transaction.operation == first.get("operation") 
+        response = self.client.post(self.url,data={"order": "desc"})
 
-        """ assert last_transaction.amount == last.get("amount") 
-        assert last_transaction.balance_at_time == last.get("balance_at_time") 
-        assert str(last_transaction.date.date()) == last.get("date") 
-        assert last_transaction.operation == last.get("operation")  """
-
+        results = response.json().get("data")
         
+        for index,value in enumerate(results):
+            if index+1 < len(results):
+                assert results[index].get("date") >= results[index+1].get("date")
 
+    def test_can_filter_date(self):
+        today = datetime.today().strftime('%d-%m-%Y')
+        yesterday = (datetime.today() - timedelta(days=1)).strftime('%d-%m-%Y')
+
+
+        response = self.client.post(self.url,data={"dates": [yesterday,today]})
+        result = response.json()
+        assert result.get("total_elements") == 16
+    
+    def test_can_filter_full(self):
+        today = datetime.today().strftime('%d-%m-%Y')
+        yesterday = (datetime.today() - timedelta(days=1)).strftime('%d-%m-%Y')
+
+
+        response = self.client.post(self.url,data={"dates": [yesterday,today],"order":"desc","operation_type": "deposit"})
+        result = response.json()
+
+        assert response.status_code == 200
+        assert result.get("total_elements") > 1
+
+    def test_error_extra_key(self):
+
+        response = self.client.post(self.url,data={"dates": ["28-7-2024","30-7-2024"],"order":"desc","operation_type": "deposit","unexpected":"key"})
         
+        assert response.status_code == 400
+    
+    def test_error_operation(self):
+
+        response = self.client.post(self.url,data={"operation_type": "random"})
+        
+        assert response.status_code == 400
+    
+    def test_error_date_string(self):
+
+        response = self.client.post(self.url,data={"dates": "2"})
+        
+        assert response.status_code == 400
+    
+    def test_error_date_one_array(self):
+
+        response = self.client.post(self.url,data={"dates": ["2"]})
+        
+        assert response.status_code == 400
+    
+    def test_error_date_reversed(self):
+        today = datetime.today().strftime('%d-%m-%Y')
+        yesterday = (datetime.today() - timedelta(days=1)).strftime('%d-%m-%Y')
+
+        response = self.client.post(self.url,data={"dates": [today,yesterday]})
+        result = response.data
+        assert response.status_code == 204
+        assert result.get("message") == "No transactions found."
+    def test_error_order(self):
+
+        response = self.client.post(self.url,data={"order": "asd"})
+        
+        assert response.status_code == 400

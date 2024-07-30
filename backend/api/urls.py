@@ -6,6 +6,5 @@ urlpatterns = [
     path("get-statement",bank_view.StatementListAPIView.as_view(),name="get-statement"),
     path("deposit",bank_view.MoveMoneyAPIView.as_view(),name="deposit"),
     path("withdraw",bank_view.MoveMoneyAPIView.as_view()),
-    path("transfer",bank_view.TransferMoneyAPIView.as_view())
-
+    path("transfer",bank_view.TransferMoneyAPIView.as_view()),
 ]
